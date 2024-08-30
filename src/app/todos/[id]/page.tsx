@@ -29,7 +29,9 @@ export default function TodoDetails({
     if (todo) {
       setText(todo.text);
       setComplete(todo.complete);
-      setTimer(todo.timer.toString());
+      setTimer(
+        isNaN(todo.timer) || todo.timer === 0 ? "" : todo.timer.toString(),
+      );
     }
   }, [todo]);
 
@@ -49,15 +51,19 @@ export default function TodoDetails({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    let newTimer = parseInt(timer, 10);
+    if (isNaN(newTimer)) {
+      newTimer = 0;
+    }
     if (isNew) {
-      createTodo({ text, complete, timer: parseInt(timer, 10) });
+      createTodo({ text, complete, timer: newTimer });
     } else {
       // TODO: There seems to be a bug that is forcing me to cast id to string then number to ensure it transmits as number
       updateTodo({
         id: parseInt(id.toString(), 10),
         text,
         complete,
-        timer: parseInt(timer, 10),
+        timer: newTimer,
       });
     }
   };
@@ -95,7 +101,8 @@ export default function TodoDetails({
           </Link>
           <button
             type="submit"
-            className="rounded-lg bg-white px-4 py-2 text-xl text-black">
+            className="rounded-lg bg-white px-4 py-2 text-xl text-black"
+            disabled={!text}>
             Save
           </button>
         </div>

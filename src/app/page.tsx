@@ -70,7 +70,10 @@ export default function Home() {
         <button
           type="button"
           onClick={handleDeleteComplete}
-          className="flex items-center gap-2 rounded-lg border p-2 text-danger">
+          className="flex items-center gap-2 rounded-lg border p-2 text-danger"
+          disabled={
+            todos?.filter((t) => t.complete).length === 0 ? true : false
+          }>
           <BsTrash className="text-xl" /> Completed
         </button>
       </div>
@@ -79,7 +82,7 @@ export default function Home() {
         <div className="flex flex-col gap-2 p-4">
           {todos?.length === 0 && (
             <div>
-              There is nothing todo... you can add a todo with the plus button
+              There are no todos... you can add a todo with the plus button
               above
             </div>
           )}

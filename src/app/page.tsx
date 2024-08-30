@@ -1,67 +1,114 @@
+"use client";
+
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { BsPlusLg, BsTrash } from "react-icons/bs";
+import { RiTimerLine } from "react-icons/ri";
+import { TodoSchemaType } from "~/server/api/routers/todo";
+import { api } from "~/trpc/react";
 
-import { LatestPost } from "~/app/_components/post";
-import { getServerAuthSession } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
+export default function Home() {
+  const { data: todos } = api.todo.readAll.useQuery();
 
-export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-  const session = await getServerAuthSession();
+  const utils = api.useUtils();
+  const queryClient = useQueryClient();
+  const { mutate: toggleTodo } = api.todo.update.useMutation({
+    // https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates
+    onMutate: async (newTodo) => {
+      // Cancel any outgoing refetches
+      // (so they don't overwrite our optimistic update)
+      await utils.todo.readAll.cancel();
 
-  void api.post.getLatest.prefetch();
+      // Snapshot the previous value
+      const previousTodos = utils.todo.readAll.getData();
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["todos", newTodo.id], newTodo);
+
+      // Return a context with the previous and new todo
+      return { previousTodos, newTodo };
+    },
+    // If the mutation fails, use the context we returned above
+    onError: (err, newTodo, context) => {
+      utils.todo.readAll.setData(undefined, context?.previousTodos);
+    },
+    // Always refetch after error or success:
+    onSettled: (newTodo) => {
+      utils.todo.readAll.invalidate();
+    },
+  });
+
+  const { mutate: deleteTodos } = api.todo.delete.useMutation({
+    onSettled: () => utils.todo.invalidate(),
+  });
+
+  const handleToggleTodo = async (todo: {
+    id: number;
+    text: string;
+    complete: boolean;
+    timer: number;
+  }) => {
+    console.log("togglin " + todo.id);
+    toggleTodo({ ...todo, complete: !todo.complete });
+  };
+
+  const handleDeleteComplete = async () => {
+    const todosToDelete = todos?.filter((t) => t.complete).map((t) => t.id);
+    deleteTodos(todosToDelete ?? []);
+  };
 
   return (
-    <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-          </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-2xl text-white">
-              {hello ? hello.greeting : "Loading tRPC query..."}
-            </p>
+    <main className="h-full w-full overflow-hidden bg-black text-white">
+      <div id="heading" className="flex items-center gap-2 p-2">
+        <h3>Todos</h3>
+        <Link href="/todos/new" className="rounded-lg bg-white/30 p-2">
+          <BsPlusLg className="text-2xl" />
+        </Link>
+      </div>
 
-            <div className="flex flex-col items-center justify-center gap-4">
-              <p className="text-center text-2xl text-white">
-                {session && <span>Logged in as {session.user?.name}</span>}
-              </p>
-              <Link
-                href={session ? "/api/auth/signout" : "/api/auth/signin"}
-                className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
-              >
-                {session ? "Sign out" : "Sign in"}
+      <div id="actions" className="flex justify-end px-2">
+        <button
+          type="button"
+          onClick={handleDeleteComplete}
+          className="flex items-center gap-2 rounded-lg border p-2 text-danger">
+          <BsTrash className="text-xl" /> Completed
+        </button>
+      </div>
+
+      <div className="h-full overflow-auto pb-80">
+        <div className="flex flex-col gap-2 p-4">
+          {todos?.length === 0 && (
+            <div>
+              There is nothing todo... you can add a todo with the plus button
+              above
+            </div>
+          )}
+          {todos?.map((todo) => (
+            <div
+              key={todo.id}
+              className="flex items-center gap-2 rounded-lg bg-white/30 p-2">
+              <input
+                type="checkbox"
+                checked={todo.complete}
+                onChange={() => handleToggleTodo(todo)}
+                className="rounded-md"
+              />
+              <Link href={`/todos/${todo.id}`} className="flex w-full">
+                <span
+                  className={`text-white ${todo.complete ? "line-through" : ""}`}>
+                  {todo.text}
+                </span>
+                {todo.timer > 0 && (
+                  <div className="ml-auto flex items-center gap-1">
+                    <RiTimerLine className="text-2xl" />
+                    <span>{todo.timer} minutes</span>
+                  </div>
+                )}
               </Link>
             </div>
-          </div>
-
-          {session?.user && <LatestPost />}
+          ))}
         </div>
-      </main>
-    </HydrateClient>
+      </div>
+    </main>
   );
 }

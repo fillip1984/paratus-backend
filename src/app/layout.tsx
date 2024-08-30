@@ -1,9 +1,13 @@
 import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
-import { type Metadata } from "next";
 
+import { use } from "react";
+import { getServerAuthSession } from "~/server/auth";
 import { TRPCReactProvider } from "~/trpc/react";
+import SideNav from "./_components/sideNav";
+import { type Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -14,11 +18,37 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const session = use(getServerAuthSession());
+  return session ? <App>{children}</App> : <Login />;
+}
+
+const App = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <div className="flex h-screen overflow-hidden">
+            <SideNav />
+            {children}
+          </div>
+        </TRPCReactProvider>
       </body>
     </html>
   );
-}
+};
+
+const Login = () => {
+  return (
+    <html lang="en" className={`${GeistSans.variable}`}>
+      <body className="flex h-screen w-screen items-center justify-center bg-black">
+        <Link
+          // href={session ? "/api/auth/signout" : "/api/auth/signin"}
+          href={"/api/auth/signin"}
+          type="button"
+          className="rounded-lg bg-white/30 px-2 py-4 text-4xl uppercase text-white">
+          Sign in
+        </Link>
+      </body>
+    </html>
+  );
+};

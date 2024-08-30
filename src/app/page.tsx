@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { BsPlusLg, BsTrash } from "react-icons/bs";
 import { RiTimerLine } from "react-icons/ri";
-import { TodoSchemaType } from "~/server/api/routers/todo";
 import { api } from "~/trpc/react";
 
 export default function Home() {
@@ -33,8 +32,8 @@ export default function Home() {
       utils.todo.readAll.setData(undefined, context?.previousTodos);
     },
     // Always refetch after error or success:
-    onSettled: (newTodo) => {
-      utils.todo.readAll.invalidate();
+    onSettled: () => {
+      void utils.todo.readAll.invalidate();
     },
   });
 

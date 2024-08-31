@@ -2,14 +2,12 @@ import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 
+import { type Metadata } from "next";
 import { use } from "react";
 import { getServerAuthSession } from "~/server/auth";
 import { TRPCReactProvider } from "~/trpc/react";
-import SideNav from "./_components/sideNav";
-import { type Metadata } from "next";
-import Link from "next/link";
-import { signIn } from "next-auth/react";
 import LogIn from "./_components/logIn";
+import SideNav from "./_components/sideNav";
 
 export const metadata: Metadata = {
   title: "Paratus App",

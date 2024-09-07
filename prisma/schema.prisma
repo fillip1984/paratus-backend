@@ -18,7 +18,7 @@ datasource db {
 // Necessary for Next auth
 model Account {
     id                       String  @id @default(cuid())
-    userId                   Int
+    userId                   String
     type                     String
     provider                 String
     providerAccountId        String
@@ -38,13 +38,13 @@ model Account {
 model Session {
     id           String   @id @default(cuid())
     sessionToken String   @unique
-    userId       Int
+    userId       String
     expires      DateTime
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-    id            Int       @id @default(autoincrement())
+    id            String    @id @default(cuid())
     name          String?
     email         String?   @unique
     emailVerified DateTime?
@@ -70,6 +70,6 @@ model Todo {
     timer     Int      @default(0)
     complete  Boolean  @default(false)
 
-    createdBy   User @relation(fields: [createdById], references: [id])
-    createdById Int
+    createdBy   User   @relation(fields: [createdById], references: [id])
+    createdById String
 }

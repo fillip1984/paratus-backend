@@ -3,8 +3,7 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 
 import { type Metadata } from "next";
-import { use } from "react";
-import { getServerAuthSession } from "~/server/auth";
+import { auth } from "~/server/auth";
 import { TRPCReactProvider } from "~/trpc/react";
 import LogIn from "./_components/logIn";
 import SideNav from "./_components/sideNav";
@@ -15,10 +14,19 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = use(getServerAuthSession());
+  const session = await auth();
+  // const [session, setSession] = useState<Session | null>();
+
+  // useEffect(() => {
+  //   async function checkAuth() {
+  //     setSession(await auth());
+  //   }
+  //   void checkAuth();
+  // }, []);
+
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>{session ? <App>{children}</App> : <LogIn />}</body>
